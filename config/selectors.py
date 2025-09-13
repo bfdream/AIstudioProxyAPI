@@ -41,8 +41,10 @@ COPY_MARKDOWN_BUTTON_SELECTOR_ALT = 'div[role="menu"] button:has-text("Copy Mark
 MAX_OUTPUT_TOKENS_SELECTOR = 'input[aria-label="Maximum output tokens"]'
 STOP_SEQUENCE_INPUT_SELECTOR = 'input[aria-label="Add stop token"]'
 MAT_CHIP_REMOVE_BUTTON_SELECTOR = 'mat-chip-set mat-chip-row button[aria-label*="Remove"]'
-TOP_P_INPUT_SELECTOR = 'ms-slider input[type="number"][max="1"]'
-TEMPERATURE_INPUT_SELECTOR = 'ms-slider input[type="number"][max="2"]'
+# TOP_P_INPUT_SELECTOR = 'ms-slider input[type="number"][max="1"]'
+TOP_P_INPUT_SELECTOR = 'ms-slider >> input.mdc-slider__input[aria-label^="Top P set of tokens"]'
+# TEMPERATURE_INPUT_SELECTOR = 'ms-slider input[type="number"][max="2"]'
+TEMPERATURE_INPUT_SELECTOR = 'ms-slider input[type="number"]'
 USE_URL_CONTEXT_SELECTOR = 'button[aria-label="Browse the url context"]'
 SET_THINKING_BUDGET_TOGGLE_SELECTOR = 'button[aria-label="Toggle thinking budget between auto and manual"]'
 # Thinking budget slider input

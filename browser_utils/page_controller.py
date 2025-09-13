@@ -316,7 +316,9 @@ class PageController:
                 return
 
             self.logger.info(f"[{self.req_id}] 请求温度 ({clamped_temp}) 与缓存值 ({cached_temp}) 不一致或缓存中无值。需要与页面交互。")
-            temp_input_locator = self.page.locator(TEMPERATURE_INPUT_SELECTOR)
+            temp_container = self.page.locator('[data-test-id="temperatureSliderContainer"]')
+            # temp_input_locator = self.page.locator(TEMPERATURE_INPUT_SELECTOR)
+            temp_input_locator = temp_container.locator(TEMPERATURE_INPUT_SELECTOR)
 
 
             try:
