@@ -645,7 +645,7 @@ async def _handle_playwright_response(req_id: str, request: ChatCompletionReques
     logger.info(f"[{req_id}] 定位响应元素...")
     response_container = page.locator(RESPONSE_CONTAINER_SELECTOR).last
     # response_element = response_container.locator(RESPONSE_TEXT_SELECTOR)
-    response_element = response_container.locator(RESPONSE_IMAGE_SELECTOR)
+    response_element = response_container.locator(','.join([RESPONSE_TEXT_SELECTOR,RESPONSE_IMAGE_SELECTOR]))
     
     try:
         await expect_async(response_container).to_be_attached(timeout=20000)
@@ -757,7 +757,15 @@ async def _handle_playwright_response(req_id: str, request: ChatCompletionReques
         )
         logger.info(f"[{req_id}] Playwright非流式计算的token使用统计: {usage_stats}")
         
-        image_url = await response_element.get_attribute("src")
+        is_image_element = await response_element.evaluate(f"el => el.matches('{RESPONSE_IMAGE_SELECTOR}')")
+        message = {"role": "assistant", "content": final_content,
+                    "images": [{
+                        "type": "image_url",
+                        "image_url": {
+                            "url": await response_element.get_attribute("src")
+                        }}]} if is_image_element \
+                        else {"role": "assistant", "content": final_content}
+        # image_url = await response_element.get_attribute("src")
         response_payload = {
             "id": f"{CHAT_COMPLETION_ID_PREFIX}{req_id}-{int(time.time())}",
             "object": "chat.completion",
@@ -765,12 +773,7 @@ async def _handle_playwright_response(req_id: str, request: ChatCompletionReques
             "model": current_ai_studio_model_id or MODEL_NAME,
             "choices": [{
                 "index": 0,
-                "message": {"role": "assistant", "content": final_content,
-                    "images": [{
-                        "type": "image_url",
-                        "image_url": {
-                            "url": image_url
-                        }}]},
+                "message": message,
                 "finish_reason": "stop"
             }],
             "usage": usage_stats
