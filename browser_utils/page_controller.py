@@ -11,7 +11,7 @@ from config import (
     TEMPERATURE_INPUT_SELECTOR, MAX_OUTPUT_TOKENS_SELECTOR, STOP_SEQUENCE_INPUT_SELECTOR,
     MAT_CHIP_REMOVE_BUTTON_SELECTOR, TOP_P_INPUT_SELECTOR, SUBMIT_BUTTON_SELECTOR,
     CLEAR_CHAT_BUTTON_SELECTOR, CLEAR_CHAT_CONFIRM_BUTTON_SELECTOR, OVERLAY_SELECTOR,
-    PROMPT_TEXTAREA_SELECTOR, RESPONSE_CONTAINER_SELECTOR, RESPONSE_TEXT_SELECTOR,
+    PROMPT_TEXTAREA_SELECTOR, RESPONSE_CONTAINER_SELECTOR, RESPONSE_TEXT_SELECTOR, RESPONSE_IMAGE_SELECTOR,
     EDIT_MESSAGE_BUTTON_SELECTOR,USE_URL_CONTEXT_SELECTOR,UPLOAD_BUTTON_SELECTOR,
     SET_THINKING_BUDGET_TOGGLE_SELECTOR, THINKING_BUDGET_INPUT_SELECTOR,
     GROUNDING_WITH_GOOGLE_SEARCH_TOGGLE_SELECTOR
@@ -571,6 +571,10 @@ class PageController:
             await self._check_disconnect(check_client_disconnected, "清空聊天 - \"清空聊天\"按钮可用性检查后")
 
             if can_attempt_clear:
+                overlay_backdrop = self.page.locator('.cdk-overlay-backdrop');
+                count = await overlay_backdrop.count()
+                if count > 0:
+                    await self.page.keyboard.press("Escape")
                 await self._execute_chat_clear(clear_chat_button_locator, confirm_button_locator, overlay_locator, check_client_disconnected)
                 await self._verify_chat_cleared(check_client_disconnected)
                 self.logger.info(f"[{self.req_id}] 聊天已清空，重新启用 '临时聊天' 模式...")
@@ -874,7 +878,8 @@ class PageController:
         try:
             # 等待响应容器出现
             response_container_locator = self.page.locator(RESPONSE_CONTAINER_SELECTOR).last
-            response_element_locator = response_container_locator.locator(RESPONSE_TEXT_SELECTOR)
+            # response_element_locator = response_container_locator.locator(RESPONSE_TEXT_SELECTOR)
+            response_element_locator = response_container_locator.locator(RESPONSE_IMAGE_SELECTOR)
 
             self.logger.info(f"[{self.req_id}] 等待响应元素附加到DOM...")
             await expect_async(response_element_locator).to_be_attached(timeout=90000)
