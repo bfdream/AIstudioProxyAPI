@@ -399,8 +399,8 @@ async def _initialize_page_logic(browser: AsyncBrowser):
                     logger.info("   ✅ 登录成功！请不要操作浏览器窗口，等待后续提示。")
 
                     # 登录成功后，调用认证保存逻辑
-                    if os.environ.get('AUTO_SAVE_AUTH', 'false').lower() == 'true':
-                        await _wait_for_model_list_and_handle_auth_save(temp_context, launch_mode, loop)
+                    # if os.environ.get('AUTO_SAVE_AUTH', 'false').lower() == 'true':
+                    await _wait_for_model_list_and_handle_auth_save(temp_context, launch_mode, loop)
 
                 except Exception as wait_login_err:
                     from .operations import save_error_snapshot
