@@ -533,6 +533,19 @@ class PageController:
             if isinstance(e, ClientDisconnectedError):
                 raise
 
+    async def close_overlays(self):
+        # 只找可见的遮罩
+        overlays = self.page.locator(".cdk-overlay-backdrop:visible, .mat-mdc-tooltip:visible, .prompt-input-wrapper:visible")
+        count = await overlays.count()
+        if count > 0:
+            self.logger.info(f"[{self.req_id}] ⚠️ 发现{count}个遮罩，尝试按 Escape 关闭")
+            for _ in range(count):
+                await self.page.keyboard.press("Escape")
+                # 给 UI 一点时间反应
+                await self.page.wait_for_timeout(1000)
+            # 等遮罩完全消失
+            # await expect_async(overlays).to_have_count(0, timeout=3000)
+
     async def clear_chat_history(self, check_client_disconnected: Callable):
         """清空聊天记录。"""
         self.logger.info(f"[{self.req_id}] 开始清空聊天记录...")
@@ -573,10 +586,7 @@ class PageController:
             await self._check_disconnect(check_client_disconnected, "清空聊天 - \"清空聊天\"按钮可用性检查后")
 
             if can_attempt_clear:
-                overlay_backdrop = self.page.locator('.cdk-overlay-backdrop');
-                count = await overlay_backdrop.count()
-                if count > 0:
-                    await self.page.keyboard.press("Escape")
+                await self.close_overlays()
                 await self._execute_chat_clear(clear_chat_button_locator, confirm_button_locator, overlay_locator, check_client_disconnected)
                 await self._verify_chat_cleared(check_client_disconnected)
                 self.logger.info(f"[{self.req_id}] 聊天已清空，重新启用 '临时聊天' 模式...")
@@ -704,6 +714,7 @@ class PageController:
                     #    page.expect_file_chooser() 会返回一个上下文管理器
                     #    当文件选择器出现时，它会得到 FileChooser 对象
                     function_btn_localtor = self.page.locator('button[aria-label="Insert assets such as images, videos, files, or audio"]')
+                    await self.close_overlays()
                     await function_btn_localtor.click()
                     #asyncio.sleep(0.5)
                     async with self.page.expect_file_chooser() as fc_info:
@@ -727,6 +738,7 @@ class PageController:
 
                 except Exception as e:
                     print(f"在上传文件时发生错误: {e}")
+                    raise
 
             # 等待发送按钮启用
             wait_timeout_ms_submit_enabled = 100000
