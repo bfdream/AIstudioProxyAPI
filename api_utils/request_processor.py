@@ -757,7 +757,7 @@ async def _handle_playwright_response(req_id: str, request: ChatCompletionReques
                     .replace(/\\s+/g, ' ')
                     .trim()""")
             logger.warning(f"❌ {error_message}")
-            response_payload = {"error": {"code": 429, "message": error_message}}
+            response_payload = {"error": {"code": 500, "message": error_message}}
             if not result_future.done():
                 result_future.set_result(JSONResponse(content=response_payload))
             return None
