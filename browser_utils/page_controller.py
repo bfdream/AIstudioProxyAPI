@@ -881,7 +881,8 @@ class PageController:
             # 等待响应容器出现
             response_container_locator = self.page.locator(RESPONSE_CONTAINER_SELECTOR).last
             # response_element_locator = response_container_locator.locator(RESPONSE_TEXT_SELECTOR)
-            response_element_locator = response_container_locator.locator(','.join([RESPONSE_TEXT_SELECTOR,RESPONSE_IMAGE_SELECTOR]))
+            response_union = f':is({RESPONSE_TEXT_SELECTOR}, {RESPONSE_IMAGE_SELECTOR})'
+            response_element_locator = response_container_locator.locator(response_union)
 
             self.logger.info(f"[{self.req_id}] 等待响应元素附加到DOM...")
             await expect_async(response_element_locator).to_be_attached(timeout=90000)

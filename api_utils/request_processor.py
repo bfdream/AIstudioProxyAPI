@@ -644,8 +644,8 @@ async def _handle_playwright_response(req_id: str, request: ChatCompletionReques
     
     logger.info(f"[{req_id}] 定位响应元素...")
     response_container = page.locator(RESPONSE_CONTAINER_SELECTOR).last
-    # response_element = response_container.locator(RESPONSE_TEXT_SELECTOR)
-    response_element = response_container.locator(','.join([RESPONSE_TEXT_SELECTOR,RESPONSE_IMAGE_SELECTOR]))
+    response_union = f':is({RESPONSE_TEXT_SELECTOR}, {RESPONSE_IMAGE_SELECTOR}, {RESPONSE_ERROR_SELECTOR})'
+    response_element = response_container.locator(response_union)
     
     try:
         await expect_async(response_container).to_be_attached(timeout=20000)
@@ -745,6 +745,23 @@ async def _handle_playwright_response(req_id: str, request: ChatCompletionReques
         
         return completion_event, submit_button_locator, check_client_disconnected
     else:
+        is_error_element = await response_element.evaluate(f"el => el.matches('{RESPONSE_ERROR_SELECTOR}')")
+        if is_error_element:
+            # error_message = await response_element.inner_text()
+            # error_message = error_message.split('\n')[1]
+            error_message = await response_element.evaluate(
+                """(el) => Array.from(el.childNodes)
+                    .filter(n => n.nodeType === Node.TEXT_NODE)
+                    .map(n => n.textContent)
+                    .join(' ')
+                    .replace(/\\s+/g, ' ')
+                    .trim()""")
+            logger.warning(f"❌ {error_message}")
+            response_payload = {"error": {"code": 429, "message": error_message}}
+            if not result_future.done():
+                result_future.set_result(JSONResponse(content=response_payload))
+            return None
+
         # 使用PageController获取响应
         page_controller = PageController(page, logger, req_id)
         final_content = await page_controller.get_response(check_client_disconnected)

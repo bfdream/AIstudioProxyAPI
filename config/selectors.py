@@ -19,6 +19,7 @@ UPLOAD_BUTTON_SELECTOR = 'button[aria-label^="Upload File"]'
 RESPONSE_CONTAINER_SELECTOR = 'ms-chat-turn .chat-turn-container.model'
 RESPONSE_TEXT_SELECTOR = 'ms-cmark-node.cmark-node'
 RESPONSE_IMAGE_SELECTOR = 'img.loaded-image'
+RESPONSE_ERROR_SELECTOR = 'div.model-error'
 
 # --- 加载和状态选择器 ---
 LOADING_SPINNER_SELECTOR = 'button[aria-label="Run"].run-button svg .stoppable-spinner'
