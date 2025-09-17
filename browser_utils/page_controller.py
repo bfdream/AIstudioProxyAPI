@@ -538,7 +538,7 @@ class PageController:
         overlays = self.page.locator(".cdk-overlay-backdrop:visible, .mat-mdc-tooltip:visible, .prompt-input-wrapper:visible")
         count = await overlays.count()
         if count > 0:
-            self.logger.info(f"[{self.req_id}] ⚠️ 发现{count}个遮罩，尝试按 Escape 关闭")
+            self.logger.info(f"[{self.req_id}] ⚠️ 发现{count}个遮罩，尝试按Escape关闭")
             for _ in range(count):
                 await self.page.keyboard.press("Escape")
                 # 给 UI 一点时间反应
@@ -720,7 +720,11 @@ class PageController:
                     async with self.page.expect_file_chooser() as fc_info:
                         # 2. 点击那个会触发文件选择的普通按钮
                         upload_btn_localtor = self.page.locator(UPLOAD_BUTTON_SELECTOR)
-                        await upload_btn_localtor.click()
+                        if await upload_btn_localtor.count() > 1:
+                            self.logger.info(f"[{self.req_id}] ⚠️ Multiple upload buttons, and click the last one (Upload Image)")
+                            await upload_btn_localtor.last.click()
+                        else:
+                            await upload_btn_localtor.click()
                         print("点击了 JS 上传按钮，等待文件选择器...")
 
                     # 3. 获取文件选择器对象

@@ -13,7 +13,7 @@ SUBMIT_BUTTON_SELECTOR = 'button[aria-label="Run"].run-button'
 CLEAR_CHAT_BUTTON_SELECTOR = 'button[data-test-clear="outside"][aria-label="New chat"]'
 CLEAR_CHAT_CONFIRM_BUTTON_SELECTOR = 'button.ms-button-primary:has-text("Discard and continue")'
 # UPLOAD_BUTTON_SELECTOR = 'button[aria-label^="Insert assets"]'
-UPLOAD_BUTTON_SELECTOR = 'button[aria-label^="Upload File"]'
+UPLOAD_BUTTON_SELECTOR = 'button[aria-label^="Upload File"], button[aria-label^="Upload Image"]'
 
 # --- 响应相关选择器 ---
 RESPONSE_CONTAINER_SELECTOR = 'ms-chat-turn .chat-turn-container.model'
