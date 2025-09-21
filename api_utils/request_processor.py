@@ -763,9 +763,21 @@ async def _handle_playwright_response(req_id: str, request: ChatCompletionReques
                 result_future.set_result(JSONResponse(content=response_payload))
             return None
 
-        # 使用PageController获取响应
-        page_controller = PageController(page, logger, req_id)
-        final_content = await page_controller.get_response(check_client_disconnected)
+        is_image_element = await response_element.evaluate(f"el => el.matches('{RESPONSE_IMAGE_SELECTOR}')")
+        message = {}
+        final_content = ""
+        if is_image_element:
+                message = {"role": "assistant", "content": final_content,
+                    "images": [{
+                    "type": "image_url",
+                    "image_url": {
+                        "url": await response_element.get_attribute("src")
+                    }}]}
+        else:
+            # 使用PageController获取响应
+            page_controller = PageController(page, logger, req_id)
+            final_content = await page_controller.get_response(check_client_disconnected)
+            message = {"role": "assistant", "content": final_content}
         
         # 计算token使用统计
         usage_stats = calculate_usage_stats(
@@ -775,14 +787,13 @@ async def _handle_playwright_response(req_id: str, request: ChatCompletionReques
         )
         logger.info(f"[{req_id}] Playwright非流式计算的token使用统计: {usage_stats}")
         
-        is_image_element = await response_element.evaluate(f"el => el.matches('{RESPONSE_IMAGE_SELECTOR}')")
-        message = {"role": "assistant", "content": final_content,
-                    "images": [{
-                        "type": "image_url",
-                        "image_url": {
-                            "url": await response_element.get_attribute("src")
-                        }}]} if is_image_element \
-                        else {"role": "assistant", "content": final_content}
+#        message = {"role": "assistant", "content": final_content,
+#                    "images": [{
+#                        "type": "image_url",
+#                        "image_url": {
+#                            "url": await response_element.get_attribute("src")
+#                        }}]} if is_image_element \
+#                        else {"role": "assistant", "content": final_content}
         # image_url = await response_element.get_attribute("src")
         response_payload = {
             "id": f"{CHAT_COMPLETION_ID_PREFIX}{req_id}-{int(time.time())}",
@@ -908,5 +919,7 @@ async def _process_request_refactored(
         await save_error_snapshot(f"process_unexpected_error_{req_id}")
         if not result_future.done():
             result_future.set_exception(HTTPException(status_code=500, detail=f"[{req_id}] Unexpected server error: {e}"))
+            context['logger'].info(f"[{req_id}] Reload the page")
+            await page.reload()
     finally:
         await _cleanup_request_resources(req_id, disconnect_check_task, completion_event, result_future, request.stream)
