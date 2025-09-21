@@ -644,7 +644,7 @@ async def _handle_playwright_response(req_id: str, request: ChatCompletionReques
     
     logger.info(f"[{req_id}] 定位响应元素...")
     response_container = page.locator(RESPONSE_CONTAINER_SELECTOR).last
-    response_union = f':is({RESPONSE_TEXT_SELECTOR}, {RESPONSE_IMAGE_SELECTOR}, {RESPONSE_ERROR_SELECTOR})'
+    response_union = f':is({RESPONSE_TEXT_SELECTOR}, {RESPONSE_IMAGE_SELECTOR}, {RESPONSE_ERROR_SELECTOR}, {RESPONSE_SAFETY_SELECTOR})'
     response_element = response_container.locator(response_union)
     
     try:
@@ -746,7 +746,8 @@ async def _handle_playwright_response(req_id: str, request: ChatCompletionReques
         return completion_event, submit_button_locator, check_client_disconnected
     else:
         is_error_element = await response_element.evaluate(f"el => el.matches('{RESPONSE_ERROR_SELECTOR}')")
-        if is_error_element:
+        is_safety_element = await response_element.evaluate(f"el => el.matches('{RESPONSE_SAFETY_SELECTOR}')")
+        if is_error_element or is_safety_element:
             # error_message = await response_element.inner_text()
             # error_message = error_message.split('\n')[1]
             error_message = await response_element.evaluate(
