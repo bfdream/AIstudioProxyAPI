@@ -645,7 +645,7 @@ async def _handle_playwright_response(req_id: str, request: ChatCompletionReques
     logger.info(f"[{req_id}] 定位响应元素...")
     response_container = page.locator(RESPONSE_CONTAINER_SELECTOR).last
     response_union = f':is({RESPONSE_TEXT_SELECTOR}, {RESPONSE_IMAGE_SELECTOR}, {RESPONSE_ERROR_SELECTOR}, {RESPONSE_SAFETY_SELECTOR})'
-    response_element = response_container.locator(response_union)
+    response_element = response_container.locator(response_union).last
     
     try:
         await expect_async(response_container).to_be_attached(timeout=20000)
@@ -919,7 +919,7 @@ async def _process_request_refactored(
         await save_error_snapshot(f"process_unexpected_error_{req_id}")
         if not result_future.done():
             result_future.set_exception(HTTPException(status_code=500, detail=f"[{req_id}] Unexpected server error: {e}"))
-            context['logger'].info(f"[{req_id}] Reload the page")
-            await page.reload()
+            # context['logger'].warning(f"[{self.req_id}] 尝试刷新页面")
+            # await page.reload()
     finally:
         await _cleanup_request_resources(req_id, disconnect_check_task, completion_event, result_future, request.stream)

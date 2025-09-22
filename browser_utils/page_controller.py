@@ -582,6 +582,8 @@ class PageController:
                     self.logger.info(f"[{self.req_id}] \"清空聊天\"按钮不可用 (预期，因为在 new_chat 页面)。跳过清空操作。")
                 else:
                     self.logger.warning(f"[{self.req_id}] 等待\"清空聊天\"按钮可用失败: {e_enable}。清空操作可能无法执行。")
+                self.logger.warning(f"[{self.req_id}] 尝试刷新页面")
+                await self.page.reload()
 
             await self._check_disconnect(check_client_disconnected, "清空聊天 - \"清空聊天\"按钮可用性检查后")
 

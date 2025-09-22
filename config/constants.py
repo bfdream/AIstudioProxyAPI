@@ -27,9 +27,11 @@ ENABLE_GOOGLE_SEARCH = os.environ.get('ENABLE_GOOGLE_SEARCH', 'false').lower() i
 
 # 默认停止序列 - 支持 JSON 格式配置
 try:
-    DEFAULT_STOP_SEQUENCES = json.loads(os.environ.get('DEFAULT_STOP_SEQUENCES', '["用户:"]'))
+    # DEFAULT_STOP_SEQUENCES = json.loads(os.environ.get('DEFAULT_STOP_SEQUENCES', '["用户:"]'))
+    DEFAULT_STOP_SEQUENCES = json.loads(os.environ.get('DEFAULT_STOP_SEQUENCES', '[]'))
 except (json.JSONDecodeError, TypeError):
-    DEFAULT_STOP_SEQUENCES = ["用户:"]  # 回退到默认值
+    # DEFAULT_STOP_SEQUENCES = ["用户:"]  # 回退到默认值
+    DEFAULT_STOP_SEQUENCES = []  # 回退到默认值
 
 # --- URL模式 ---
 AI_STUDIO_URL_PATTERN = os.environ.get('AI_STUDIO_URL_PATTERN', 'aistudio.google.com/')
