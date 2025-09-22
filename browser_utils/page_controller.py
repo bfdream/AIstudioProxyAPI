@@ -18,6 +18,7 @@ from config import (
 )
 from config import (
     CLICK_TIMEOUT_MS, WAIT_FOR_ELEMENT_TIMEOUT_MS, CLEAR_CHAT_VERIFY_TIMEOUT_MS,
+    SIMPLE_PARAM_MODELS,
     DEFAULT_TEMPERATURE, DEFAULT_MAX_OUTPUT_TOKENS, DEFAULT_STOP_SEQUENCES, DEFAULT_TOP_P,
     ENABLE_URL_CONTEXT, ENABLE_THINKING_BUDGET, DEFAULT_THINKING_BUDGET, ENABLE_GOOGLE_SEARCH
 )
@@ -62,6 +63,10 @@ class PageController:
         top_p_to_set = request_params.get('top_p', DEFAULT_TOP_P)
         await self._adjust_top_p(top_p_to_set, check_client_disconnected)
         await self._check_disconnect(check_client_disconnected, "End Parameter Adjustment")
+
+        if model_id_to_use in SIMPLE_PARAM_MODELS:
+            self.logger.info(f"[{self.req_id}] 模型{model_id_to_use}配置为使用简单参数设置")
+            return
 
         # 确保工具面板已展开，以便调整高级设置
         await self._ensure_tools_panel_expanded(check_client_disconnected)
@@ -533,7 +538,7 @@ class PageController:
             if isinstance(e, ClientDisconnectedError):
                 raise
 
-    async def close_overlays(self):
+    async def close_overlays_ack_button(self):
         # 只找可见的遮罩
         overlays = self.page.locator(".cdk-overlay-backdrop:visible, .mat-mdc-tooltip:visible, .prompt-input-wrapper:visible")
         count = await overlays.count()
@@ -542,14 +547,22 @@ class PageController:
             for _ in range(count):
                 await self.page.keyboard.press("Escape")
                 # 给 UI 一点时间反应
-                await self.page.wait_for_timeout(1000)
+                await self.page.wait_for_timeout(1500)
             # 等遮罩完全消失
             # await expect_async(overlays).to_have_count(0, timeout=3000)
+
+        button = self.page.locator("mat-dialog-container:visible button[aria-label='Agree to the copyright acknowledgement']")
+        count = await button.count()
+        if count > 0:
+            self.logger.info(f"[{self.req_id}] ⚠️ 发现Acknowledge按钮，准备点击")
+            await button.click()
+            await self.page.wait_for_timeout(3000)
 
     async def clear_chat_history(self, check_client_disconnected: Callable):
         """清空聊天记录。"""
         self.logger.info(f"[{self.req_id}] 开始清空聊天记录...")
-        await self._check_disconnect(check_client_disconnected, "Start Clear Chat")
+        if check_client_disconnected:
+            await self._check_disconnect(check_client_disconnected, "Start Clear Chat")
 
         try:
             # 一般是使用流式代理时遇到,流式输出已结束,但页面上AI仍回复个不停,此时会锁住清空按钮,但页面仍是/new_chat,而跳过后续清空操作
@@ -588,7 +601,7 @@ class PageController:
             await self._check_disconnect(check_client_disconnected, "清空聊天 - \"清空聊天\"按钮可用性检查后")
 
             if can_attempt_clear:
-                await self.close_overlays()
+                await self.close_overlays_ack_button()
                 await self._execute_chat_clear(clear_chat_button_locator, confirm_button_locator, overlay_locator, check_client_disconnected)
                 await self._verify_chat_cleared(check_client_disconnected)
                 self.logger.info(f"[{self.req_id}] 聊天已清空，重新启用 '临时聊天' 模式...")
@@ -716,14 +729,14 @@ class PageController:
                     #    page.expect_file_chooser() 会返回一个上下文管理器
                     #    当文件选择器出现时，它会得到 FileChooser 对象
                     function_btn_localtor = self.page.locator('button[aria-label="Insert assets such as images, videos, files, or audio"]')
-                    await self.close_overlays()
+                    await self.close_overlays_ack_button()
                     await function_btn_localtor.click()
                     #asyncio.sleep(0.5)
                     async with self.page.expect_file_chooser() as fc_info:
                         # 2. 点击那个会触发文件选择的普通按钮
                         upload_btn_localtor = self.page.locator(UPLOAD_BUTTON_SELECTOR)
                         if await upload_btn_localtor.count() > 1:
-                            self.logger.info(f"[{self.req_id}] ⚠️ Multiple upload buttons, and click the last one (Upload Image)")
+                            self.logger.info(f"[{self.req_id}] ⚠️ 发现多个上传按钮，点击上传图片按钮")
                             await upload_btn_localtor.last.click()
                         else:
                             await upload_btn_localtor.click()

@@ -16,6 +16,11 @@ CHAT_COMPLETION_ID_PREFIX = os.environ.get('CHAT_COMPLETION_ID_PREFIX', 'chatcmp
 DEFAULT_FALLBACK_MODEL_ID = os.environ.get('DEFAULT_FALLBACK_MODEL_ID', "no model list")
 
 # --- 默认参数值 ---
+try:
+    SIMPLE_PARAM_MODELS = json.loads(os.environ.get('SIMPLE_PARAM_MODELS', '[]'))
+except (json.JSONDecodeError, TypeError):
+    SIMPLE_PARAM_MODELS = []
+
 DEFAULT_TEMPERATURE = float(os.environ.get('DEFAULT_TEMPERATURE', '1.0'))
 DEFAULT_MAX_OUTPUT_TOKENS = int(os.environ.get('DEFAULT_MAX_OUTPUT_TOKENS', '65536'))
 DEFAULT_TOP_P = float(os.environ.get('DEFAULT_TOP_P', '0.95'))
