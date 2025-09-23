@@ -584,7 +584,7 @@ class PageController:
             confirm_button_locator = self.page.locator(CLEAR_CHAT_CONFIRM_BUTTON_SELECTOR)
             overlay_locator = self.page.locator(OVERLAY_SELECTOR)
 
-            can_attempt_clear = False
+            can_attempt_clear = True
             try:
                 await expect_async(clear_chat_button_locator).to_be_enabled(timeout=3000)
                 can_attempt_clear = True
@@ -595,8 +595,8 @@ class PageController:
                     self.logger.info(f"[{self.req_id}] \"清空聊天\"按钮不可用 (预期，因为在 new_chat 页面)。跳过清空操作。")
                 else:
                     self.logger.warning(f"[{self.req_id}] 等待\"清空聊天\"按钮可用失败: {e_enable}。清空操作可能无法执行。")
-                self.logger.warning(f"[{self.req_id}] 尝试刷新页面")
-                await self.page.reload()
+                # self.logger.warning(f"[{self.req_id}] 尝试刷新页面")
+                # await self.page.reload()
 
             await self._check_disconnect(check_client_disconnected, "清空聊天 - \"清空聊天\"按钮可用性检查后")
 
