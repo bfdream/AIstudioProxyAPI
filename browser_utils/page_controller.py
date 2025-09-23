@@ -551,10 +551,10 @@ class PageController:
             # 等遮罩完全消失
             # await expect_async(overlays).to_have_count(0, timeout=3000)
 
-        button = self.page.locator("mat-dialog-container:visible button[aria-label='Agree to the copyright acknowledgement']")
+        button = self.page.locator('mat-dialog-container:visible :is(button[aria-label="close"], button[aria-label="Agree to the copyright acknowledgement"])')
         count = await button.count()
         if count > 0:
-            self.logger.info(f"[{self.req_id}] ⚠️ 发现Acknowledge按钮，准备点击")
+            self.logger.info(f"[{self.req_id}] ⚠️ 发现Acknowledge或Close按钮，准备点击")
             await button.click()
             await self.page.wait_for_timeout(3000)
 
