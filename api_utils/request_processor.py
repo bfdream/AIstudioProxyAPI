@@ -648,9 +648,9 @@ async def _handle_playwright_response(req_id: str, request: ChatCompletionReques
     response_element = response_container.locator(response_union).last
     
     try:
-        await expect_async(response_container).to_be_attached(timeout=20000)
+        await expect_async(response_container).to_be_attached(timeout=60000)
         check_client_disconnected("After Response Container Attached: ")
-        await expect_async(response_element).to_be_attached(timeout=90000)
+        await expect_async(response_element).to_be_attached(timeout=200000)
         logger.info(f"[{req_id}] 响应元素已定位。")
     except (PlaywrightAsyncError, asyncio.TimeoutError, ClientDisconnectedError) as locate_err:
         if isinstance(locate_err, ClientDisconnectedError):
@@ -767,12 +767,13 @@ async def _handle_playwright_response(req_id: str, request: ChatCompletionReques
         message = {}
         final_content = ""
         if is_image_element:
-                message = {"role": "assistant", "content": final_content,
-                    "images": [{
-                    "type": "image_url",
-                    "image_url": {
-                        "url": await response_element.get_attribute("src")
-                    }}]}
+            logger.info(f"[{req_id}] 定位到生成图片")
+            message = {"role": "assistant", "content": final_content,
+                "images": [{
+                "type": "image_url",
+                "image_url": {
+                    "url": await response_element.get_attribute("src")
+                }}]}
         else:
             # 使用PageController获取响应
             page_controller = PageController(page, logger, req_id)

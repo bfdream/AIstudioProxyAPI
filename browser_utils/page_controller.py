@@ -558,6 +558,13 @@ class PageController:
             await button.click()
             await self.page.wait_for_timeout(3000)
 
+        button = self.page.locator('.glue-cookie-notification-bar:visible .glue-cookie-notification-bar__accept')
+        count = await button.count()
+        if count > 0:
+            self.logger.info(f"[{self.req_id}] ⚠️ 发现Cookie的Agree按钮，准备点击")
+            await button.click()
+            await self.page.wait_for_timeout(3000)
+
     async def clear_chat_history(self, check_client_disconnected: Callable):
         """清空聊天记录。"""
         self.logger.info(f"[{self.req_id}] 开始清空聊天记录...")
