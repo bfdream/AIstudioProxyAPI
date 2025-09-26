@@ -8,6 +8,7 @@ import json
 import os
 import random
 import time
+import re
 from typing import Optional, Tuple, Callable, AsyncGenerator
 from asyncio import Event, Future
 
@@ -767,6 +768,7 @@ async def _handle_playwright_response(req_id: str, request: ChatCompletionReques
         message = {}
         final_content = ""
         if is_image_element:
+            await expect_async(response_element).to_have_attribute("src", re.compile(r"\S"), timeout=200000)
             logger.info(f"[{req_id}] 定位到生成图片")
             message = {"role": "assistant", "content": final_content,
                 "images": [{
