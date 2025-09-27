@@ -538,7 +538,7 @@ class PageController:
             if isinstance(e, ClientDisconnectedError):
                 raise
 
-    async def close_overlays_ack_button(self):
+    async def close_overlays_dialog(self):
         # 只找可见的遮罩
         overlays = self.page.locator(".cdk-overlay-backdrop:visible, .mat-mdc-tooltip:visible, .prompt-input-wrapper:visible")
         count = await overlays.count()
@@ -550,6 +550,13 @@ class PageController:
                 await self.page.wait_for_timeout(1500)
             # 等遮罩完全消失
             # await expect_async(overlays).to_have_count(0, timeout=3000)
+
+        button = self.page.locator('mat-dialog-container.mdc-dialog--open >> button:has-text("Cancel and use Temporary chat")')
+        count = await button.count()
+        if count > 0:
+            self.logger.info(f"[{self.req_id}] ⚠️ 发现选择临时聊天按钮，准备点击")
+            await button.click()
+            await self.page.wait_for_timeout(3000)
 
         button = self.page.locator('mat-dialog-container:visible :is(button[aria-label="close"], button[aria-label="Agree to the copyright acknowledgement"])')
         count = await button.count()
@@ -608,7 +615,7 @@ class PageController:
             await self._check_disconnect(check_client_disconnected, "清空聊天 - \"清空聊天\"按钮可用性检查后")
 
             if can_attempt_clear:
-                await self.close_overlays_ack_button()
+                await self.close_overlays_dialog()
                 await self._execute_chat_clear(clear_chat_button_locator, confirm_button_locator, overlay_locator, check_client_disconnected)
                 await self._verify_chat_cleared(check_client_disconnected)
                 self.logger.info(f"[{self.req_id}] 聊天已清空，重新启用 '临时聊天' 模式...")
@@ -736,7 +743,7 @@ class PageController:
                     #    page.expect_file_chooser() 会返回一个上下文管理器
                     #    当文件选择器出现时，它会得到 FileChooser 对象
                     function_btn_localtor = self.page.locator('button[aria-label="Insert assets such as images, videos, files, or audio"]')
-                    await self.close_overlays_ack_button()
+                    await self.close_overlays_dialog()
                     await function_btn_localtor.click()
                     #asyncio.sleep(0.5)
                     async with self.page.expect_file_chooser() as fc_info:

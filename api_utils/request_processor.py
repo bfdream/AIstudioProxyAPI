@@ -646,12 +646,14 @@ async def _handle_playwright_response(req_id: str, request: ChatCompletionReques
     logger.info(f"[{req_id}] 定位响应元素...")
     response_container = page.locator(RESPONSE_CONTAINER_SELECTOR).last
     response_union = f':is({RESPONSE_TEXT_SELECTOR}, {RESPONSE_IMAGE_SELECTOR}, {RESPONSE_ERROR_SELECTOR}, {RESPONSE_SAFETY_SELECTOR})'
-    response_element = response_container.locator(response_union).last
+    # response_element = response_container.locator(response_union).last
+    response_element = response_container.locator(response_union)
     
     try:
         await expect_async(response_container).to_be_attached(timeout=60000)
         check_client_disconnected("After Response Container Attached: ")
-        await expect_async(response_element).to_be_attached(timeout=200000)
+        # await expect_async(response_element).to_be_attached(timeout=200000)
+        await expect_async(response_element.last).to_be_attached(timeout=200000)
         logger.info(f"[{req_id}] 响应元素已定位。")
     except (PlaywrightAsyncError, asyncio.TimeoutError, ClientDisconnectedError) as locate_err:
         if isinstance(locate_err, ClientDisconnectedError):
@@ -746,29 +748,36 @@ async def _handle_playwright_response(req_id: str, request: ChatCompletionReques
         
         return completion_event, submit_button_locator, check_client_disconnected
     else:
-        is_error_element = await response_element.evaluate(f"el => el.matches('{RESPONSE_ERROR_SELECTOR}')")
-        is_safety_element = await response_element.evaluate(f"el => el.matches('{RESPONSE_SAFETY_SELECTOR}')")
-        if is_error_element or is_safety_element:
-            # error_message = await response_element.inner_text()
-            # error_message = error_message.split('\n')[1]
-            error_message = await response_element.evaluate(
-                """(el) => Array.from(el.childNodes)
-                    .filter(n => n.nodeType === Node.TEXT_NODE)
-                    .map(n => n.textContent)
-                    .join(' ')
-                    .replace(/\\s+/g, ' ')
-                    .trim()""")
-            logger.warning(f"❌ {error_message}")
-            response_payload = {"error": {"code": 500, "message": error_message}}
-            if not result_future.done():
-                result_future.set_result(JSONResponse(content=response_payload))
-            return None
+        logger.info(f"[{req_id}] 尝试检测错误或屏蔽...")
+        err_safe_element = response_container.locator(f':is({RESPONSE_ERROR_SELECTOR}, {RESPONSE_SAFETY_SELECTOR})').last
+        count = await err_safe_element.count()
+        if count > 0:
+            is_error_element = await err_safe_element.evaluate(f"el => el.matches('{RESPONSE_ERROR_SELECTOR}')")
+            is_safety_element = await err_safe_element.evaluate(f"el => el.matches('{RESPONSE_SAFETY_SELECTOR}')")
+            if is_error_element or is_safety_element:
+                # error_message = await response_element.inner_text()
+                # error_message = error_message.split('\n')[1]
+                error_message = await err_safe_element.evaluate(
+                    """(el) => Array.from(el.childNodes)
+                        .filter(n => n.nodeType === Node.TEXT_NODE)
+                        .map(n => n.textContent)
+                        .join(' ')
+                        .replace(/\\s+/g, ' ')
+                        .trim()""")
+                logger.warning(f"❌ {error_message}")
+                response_payload = {"error": {"code": 500, "message": error_message}}
+                if not result_future.done():
+                    result_future.set_result(JSONResponse(content=response_payload))
+                return None
 
-        is_image_element = await response_element.evaluate(f"el => el.matches('{RESPONSE_IMAGE_SELECTOR}')")
         message = {}
         final_content = ""
-        if is_image_element:
+        image_element = response_container.locator(f'{RESPONSE_IMAGE_SELECTOR}').last
+        count = await image_element.count()
+        if count > 0:
+        # is_image_element = await response_element.evaluate(f"el => el.matches('{RESPONSE_IMAGE_SELECTOR}')")
             await expect_async(response_element).to_have_attribute("src", re.compile(r"\S"), timeout=200000)
+        # if is_image_element:
             logger.info(f"[{req_id}] 定位到生成图片")
             message = {"role": "assistant", "content": final_content,
                 "images": [{
@@ -778,6 +787,7 @@ async def _handle_playwright_response(req_id: str, request: ChatCompletionReques
                 }}]}
         else:
             # 使用PageController获取响应
+            logger.info(f"[{req_id}] 尝试定位文本...")
             page_controller = PageController(page, logger, req_id)
             final_content = await page_controller.get_response(check_client_disconnected)
             message = {"role": "assistant", "content": final_content}
@@ -790,13 +800,13 @@ async def _handle_playwright_response(req_id: str, request: ChatCompletionReques
         )
         logger.info(f"[{req_id}] Playwright非流式计算的token使用统计: {usage_stats}")
         
-#        message = {"role": "assistant", "content": final_content,
-#                    "images": [{
-#                        "type": "image_url",
-#                        "image_url": {
-#                            "url": await response_element.get_attribute("src")
-#                        }}]} if is_image_element \
-#                        else {"role": "assistant", "content": final_content}
+        # message = {"role": "assistant", "content": final_content,
+        #             "images": [{
+        #                 "type": "image_url",
+        #                 "image_url": {
+        #                     "url": await response_element.get_attribute("src")
+        #                 }}]} if is_image_element \
+        #                 else {"role": "assistant", "content": final_content}
         # image_url = await response_element.get_attribute("src")
         response_payload = {
             "id": f"{CHAT_COMPLETION_ID_PREFIX}{req_id}-{int(time.time())}",

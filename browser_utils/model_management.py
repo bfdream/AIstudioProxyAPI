@@ -295,6 +295,15 @@ async def switch_ai_studio_model(page: AsyncPage, model_id: str, req_id: str) ->
 
             if page_display_match:
                 try:
+                    overlays = page.locator(".cdk-overlay-backdrop:visible, .mat-mdc-tooltip:visible, .prompt-input-wrapper:visible")
+                    count = await overlays.count()
+                    if count > 0:
+                        logger.info(f"[{req_id}] ⚠️ 发现{count}个遮罩，尝试按Escape关闭")
+                        for _ in range(count):
+                            await page.keyboard.press("Escape")
+                            # 给 UI 一点时间反应
+                            await page.wait_for_timeout(1500)
+
                     logger.info(f"[{req_id}] 模型切换成功，重新启用 '临时聊天' 模式...")
                     incognito_button_locator = page.locator('button[aria-label="Temporary chat toggle"]')
                     
